@@ -1,6 +1,6 @@
 import { DiffTracker } from '../../diff.ts';
 import { DEFAULT_CONTENT, parseDocument } from '../../markdown.ts';
-import type { cy } from '../../mod.ts';
+import { cy } from '../../mod.ts';
 import AbstractSynthesizeCallHandler, { type SynthesizeRequest } from './mod.ts';
 
 const BODY_TOKENS = [
@@ -12,7 +12,13 @@ const BODY_TOKENS = [
 export default class DummySynthesizer extends AbstractSynthesizeCallHandler {
 	public override async *synthesize(req: SynthesizeRequest): AsyncGenerator<cy.RemoteSynthesisEvent, void> {
 		const N_CHOICES = BODY_TOKENS.length;
-		yield { ev: 'start', candidates: Array(N_CHOICES).fill({ role: req.role ?? { name: 'Agent', group: 'cy:agent' } }) };
+		yield {
+			ev: 'start',
+			candidates: Array(N_CHOICES)
+				.fill({
+					role: req.role ? { kind: 'known', key: req.role } satisfies cy.KnownOrCustomRole : { kind: 'known', key: 'cy:agent' }
+				})
+		};
 
 		const maxTokens = Math.max(...BODY_TOKENS.map(x => x.length));
 		const trackers = Array(N_CHOICES).fill(null).map(_ => new DiffTracker(DEFAULT_CONTENT));

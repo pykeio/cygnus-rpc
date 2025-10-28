@@ -92,14 +92,18 @@ export interface FullDemonstration extends Demonstration {
   content: DemonstrationContent;
 }
 
+export type RoleKey = string | ({
+  group: string;
+  name: string;
+});
+
 export interface ItemBaseV1 {
   id: string;
   type: string;
   parent?: string;
 }
 
-export interface CyMessageRoleDefinitionV1 {
-  group: string;
+export interface DemonstrationCustomRoleV1 {
   name: string;
   display?: RoleDisplay;
 }
@@ -118,7 +122,7 @@ export interface CyMessageSynthesisDescriptionV1 {
 
 export interface CyMessageItemV1 extends ItemBaseV1 {
   type: "cy:message";
-  role: CyMessageRoleDefinitionV1;
+  role: RoleKey;
   content: any;
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
@@ -135,6 +139,7 @@ export type ItemV1 = CyMessageItemV1 | CyMessageCandidatesItemV1;
 export interface DemonstrationContentV1 {
   version: 1;
   items?: Array<ItemV1>;
+  customRoles?: Record<string, Array<DemonstrationCustomRoleV1>>;
   initialTaskConfig?: Pick<TaskConfigV1, "roles" | "editorFeatures">;
 }
 
@@ -236,6 +241,14 @@ export interface ProjectConfigV1 {
 
 export type ProjectConfig = ProjectConfigV1;
 
+export type KnownOrCustomRole = {
+  kind: "known";
+  key: RoleKey;
+} | ({
+  kind: "custom";
+  group: string;
+} & DemonstrationCustomRoleV1);
+
 export interface RemoteTaskSeedCall {
   ev: "task:seed";
   initiator: {
@@ -268,13 +281,13 @@ export interface RemoteSynthesisCall {
   };
   synthesizer: string;
   creativity?: number;
-  role?: CyMessageRoleDefinitionV1;
+  role?: RoleKey;
 }
 
 export type RemoteSynthesisEvent = {
   ev: "start";
   candidates: Array<{
-    role: CyMessageRoleDefinitionV1;
+    role: KnownOrCustomRole;
   }>;
   modelVersion?: string;
   generationId?: string;
@@ -311,7 +324,7 @@ export interface RemoteRoleGenerationCall {
 }
 
 export interface RemoteRoleGenerationResponse {
-  role: Omit<CyMessageRoleDefinitionV1, "group">;
+  role: DemonstrationCustomRoleV1;
   synthesis?: {
     suppressAuto?: boolean;
   };
@@ -332,7 +345,7 @@ export interface Task {
   goal: number | null;
 }
 
-export type RoleKey = string | ({
+export type NextRole = string | ({
   group: string;
 } & ({
   name: string;
@@ -362,7 +375,7 @@ export interface RoleSynthesisConfig {
 
 export interface IndividualRole {
   name: string;
-  next?: RoleKey;
+  next?: NextRole;
   display?: RoleDisplay;
   synthesis?: RoleSynthesisConfig;
 }
