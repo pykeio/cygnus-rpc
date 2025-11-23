@@ -47,7 +47,7 @@ export const ProjectPrivacy: {
 
 export type ProjectPrivacy = (typeof ProjectPrivacy)[keyof typeof ProjectPrivacy];
 
-export const UserProjectRole: {
+export const MemberRole: {
   BANNED: "BANNED";
   GENERAL: "GENERAL";
   MODERATOR: "MODERATOR";
@@ -55,7 +55,7 @@ export const UserProjectRole: {
   OWNER: "OWNER";
 };
 
-export type UserProjectRole = (typeof UserProjectRole)[keyof typeof UserProjectRole];
+export type MemberRole = (typeof MemberRole)[keyof typeof MemberRole];
 
 export const TaskType: {
   DEMONSTRATE: "DEMONSTRATE";
@@ -79,17 +79,48 @@ export interface Demonstration {
   task: Task | null;
   createdAt: Date;
   updatedAt: Date;
+  content: DemonstrationContent;
   privacy: DemonstrationPrivacy;
   review: DemonstrationReviewState;
   collabAbility: DemonstrationCollaboratorAbility;
   frozen: DemonstrationFreezeState;
-  author: ProjectUser | null;
-  participants: Array<ProjectUser>;
+  author: ProjectMember | null;
+  participants: Array<ProjectMember>;
 }
 
-export interface FullDemonstration extends Demonstration {
-  project: Project;
-  content: DemonstrationContent;
+export interface Project {
+  id: string;
+  displayName: string;
+  iconRid: string | null;
+  privacy: ProjectPrivacy;
+  config: ProjectConfig;
+  privilege?: MemberRole | null;
+}
+
+export interface ProjectMember {
+  privilege: MemberRole | null;
+}
+
+export interface Task {
+  id: string;
+  name: string;
+  emoticon: string | null;
+  color: string | null;
+  description: string;
+  index: number;
+  enabled: boolean;
+  type: TaskType;
+  config: TaskConfig;
+  goal: number | null;
+}
+
+export interface User {
+  id: string;
+  createdAt: Date;
+  display: string | null;
+  username: string;
+  avatarRid: string | null;
+  sitewideRole: UserSitewideRole;
 }
 
 export type RoleKey = string | ({
@@ -207,19 +238,6 @@ export interface EditorFeatures {
   };
 }
 
-export interface Project {
-  id: string;
-  displayName: string;
-  iconRid: string | null;
-  privacy: ProjectPrivacy;
-  config: ProjectConfig;
-  privilege?: UserProjectRole | null;
-}
-
-export interface ProjectUser {
-  privilege: UserProjectRole | null;
-}
-
 export interface ProjectDemonstrationTypeDefaults {
   privacy?: DemonstrationPrivacy;
   collabAbility?: DemonstrationCollaboratorAbility;
@@ -332,19 +350,6 @@ export interface RemoteRoleGenerationResponse {
 
 export type RemoteCall = RemoteTaskSeedCall | RemoteSynthesisCall | RemotePingCall | RemoteRoleGenerationCall;
 
-export interface Task {
-  id: string;
-  name: string;
-  emoticon: string | null;
-  color: string | null;
-  description: string;
-  index: number;
-  enabled: boolean;
-  type: TaskType;
-  config: TaskConfig;
-  goal: number | null;
-}
-
 export type NextRole = string | ({
   group: string;
 } & ({
@@ -411,12 +416,3 @@ export interface TaskConfigV1 {
 }
 
 export type TaskConfig = TaskConfigV1;
-
-export interface User {
-  id: string;
-  createdAt: Date;
-  display: string | null;
-  username: string;
-  avatarRid: string | null;
-  sitewideRole: UserSitewideRole;
-}
