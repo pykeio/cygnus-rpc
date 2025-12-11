@@ -17,7 +17,7 @@ export default abstract class AbstractSynthesizeCallHandler implements Route {
 		return concatBytes([ new Uint8Array(length.buffer), encoded ]);
 	}
 
-	public readonly event = 'demonstration:synthesize';
+	public readonly event = 'synthesize';
 	// deno-lint-ignore require-await
 	public async [RESPOND_SYMBOL](req: cy.RemoteSynthesisCall): Promise<Response> {
 		const abortController = new AbortController();

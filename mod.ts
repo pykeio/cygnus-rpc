@@ -127,7 +127,7 @@ export default class CygnusWorker {
 						const body = this.parseBody(bytes);
 						// only log if this isn't a ping event. ping events with invalid signatures are intentionally sent
 						// to ensure the worker's signature check is working properly.
-						if (body.ev !== 'cygnus:ping') {
+						if (body.ev !== 'ping') {
 							throw 1;
 						}
 					} catch {
@@ -144,7 +144,7 @@ export default class CygnusWorker {
 					return new Response(null, { status: 400 });
 				}
 
-				if (body.ev === 'cygnus:ping') {
+				if (body.ev === 'ping') {
 					return new Response(null, { status: 204 });
 				}
 
@@ -199,10 +199,10 @@ export default class CygnusWorker {
 		let mode: 'oneshot' | 'streaming' = 'oneshot';
 		let payload: cy.RemoteCall;
 		switch (route.event) {
-			case 'demonstration:synthesize':
+			case 'synthesize':
 				mode = 'streaming';
 				payload = {
-					ev: 'demonstration:synthesize',
+					ev: 'synthesize',
 					initiator: { id: nanoid(20) },
 					synthesizer: 'any',
 					creativity: 3,
@@ -213,9 +213,9 @@ export default class CygnusWorker {
 					},
 				};
 				break;
-			case 'task:seed':
+			case 'seed':
 				payload = {
-					ev: 'task:seed',
+					ev: 'seed',
 					initiator: { id: nanoid(20) },
 					source: { init: 'FREE', type: 'EXPERIMENT' }
 				};

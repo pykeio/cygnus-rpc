@@ -9,7 +9,7 @@ export type SeedResponse = cy.RemoteTaskSeedResponse;
 export default abstract class AbstractSeedCallHandler implements Route {
 	public abstract seed(req: SeedRequest): Promise<SeedResponse>;
 
-	public readonly event = 'task:seed';
+	public readonly event = 'seed';
 
 	public async [RESPOND_SYMBOL](req: cy.RemoteTaskSeedCall): Promise<Response> {
 		// deno-lint-ignore no-explicit-any

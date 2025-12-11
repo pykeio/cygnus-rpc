@@ -1,3 +1,54 @@
+export interface Demonstration {
+  id: string;
+  type: DemonstrationType;
+  title: string;
+  task: Task | null;
+  createdAt: Date;
+  updatedAt: Date;
+  content: DemonstrationContent;
+  privacy: DemonstrationPrivacy;
+  review: DemonstrationReviewState;
+  collabAbility: DemonstrationCollaboratorAbility;
+  frozen: DemonstrationFreezeState;
+  author: ProjectMember | null;
+  participants: Array<ProjectMember>;
+}
+
+export interface Project {
+  id: string;
+  displayName: string;
+  iconRid: string | null;
+  privacy: ProjectPrivacy;
+  config: ProjectConfig;
+  privilege?: MemberRole | null;
+}
+
+export interface ProjectMember {
+  privilege: MemberRole | null;
+}
+
+export interface Task {
+  id: string;
+  name: string;
+  emoticon: string | null;
+  color: string | null;
+  description: string;
+  index: number;
+  enabled: boolean;
+  type: TaskType;
+  config: TaskConfig;
+  options: TaskOptions;
+}
+
+export interface User {
+  id: string;
+  createdAt: Date;
+  display: string | null;
+  username: string;
+  avatarRid: string | null;
+  sitewideRole: UserSitewideRole;
+}
+
 export const DemonstrationType: {
   DEMONSTRATION: "DEMONSTRATION";
   EXPERIMENT: "EXPERIMENT";
@@ -72,57 +123,6 @@ export const UserSitewideRole: {
 
 export type UserSitewideRole = (typeof UserSitewideRole)[keyof typeof UserSitewideRole];
 
-export interface Demonstration {
-  id: string;
-  type: DemonstrationType;
-  title: string;
-  task: Task | null;
-  createdAt: Date;
-  updatedAt: Date;
-  content: DemonstrationContent;
-  privacy: DemonstrationPrivacy;
-  review: DemonstrationReviewState;
-  collabAbility: DemonstrationCollaboratorAbility;
-  frozen: DemonstrationFreezeState;
-  author: ProjectMember | null;
-  participants: Array<ProjectMember>;
-}
-
-export interface Project {
-  id: string;
-  displayName: string;
-  iconRid: string | null;
-  privacy: ProjectPrivacy;
-  config: ProjectConfig;
-  privilege?: MemberRole | null;
-}
-
-export interface ProjectMember {
-  privilege: MemberRole | null;
-}
-
-export interface Task {
-  id: string;
-  name: string;
-  emoticon: string | null;
-  color: string | null;
-  description: string;
-  index: number;
-  enabled: boolean;
-  type: TaskType;
-  config: TaskConfig;
-  goal: number | null;
-}
-
-export interface User {
-  id: string;
-  createdAt: Date;
-  display: string | null;
-  username: string;
-  avatarRid: string | null;
-  sitewideRole: UserSitewideRole;
-}
-
 export type RoleKey = string | ({
   group: string;
   name: string;
@@ -154,7 +154,7 @@ export interface CyMessageSynthesisDescriptionV1 {
 export interface CyMessageItemV1 extends ItemBaseV1 {
   type: "cy:message";
   role: RoleKey;
-  content: any;
+  content: object;
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
 
@@ -165,7 +165,52 @@ export interface CyMessageCandidatesItemV1 extends ItemBaseV1 {
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
 
-export type ItemV1 = CyMessageItemV1 | CyMessageCandidatesItemV1;
+export type CyFunctionCallOutputV1 = ({
+  success: true;
+} & ({
+  display: "none";
+} | {
+  display: "string";
+  data: string;
+} | {
+  display: "json";
+  data: object;
+} | {
+  display: "pyke:search-results";
+  answer?: string;
+  results: Array<{
+    url: string;
+    favicon?: string;
+    title: string;
+    content: string;
+  }>;
+})) | {
+  success: false;
+  error: string;
+};
+
+export type CyFunctionCallArgumentV1 = {
+  arg: string | number;
+} & ({
+  type: "string";
+  value: string;
+} | {
+  type: "number";
+  value: number;
+} | {
+  type: "role";
+  role: RoleKey;
+});
+
+export interface CyFunctionCallItemV1 extends ItemBaseV1 {
+  type: "cy:function-call";
+  func: string;
+  arguments: Array<CyFunctionCallArgumentV1>;
+  output: CyFunctionCallOutputV1 | null;
+  persist?: boolean;
+}
+
+export type ItemV1 = CyMessageItemV1 | CyMessageCandidatesItemV1 | CyFunctionCallItemV1;
 
 export interface DemonstrationContentV1 {
   version: 1;
@@ -268,7 +313,7 @@ export type KnownOrCustomRole = {
 } & DemonstrationCustomRoleV1);
 
 export interface RemoteTaskSeedCall {
-  ev: "task:seed";
+  ev: "seed";
   initiator: {
     id: string;
   };
@@ -287,7 +332,7 @@ export interface RemoteTaskSeedResponse {
 }
 
 export interface RemoteSynthesisCall {
-  ev: "demonstration:synthesize";
+  ev: "synthesize";
   initiator: {
     id: string;
   };
@@ -326,11 +371,11 @@ export type RemoteSynthesisEvent = {
 };
 
 export interface RemotePingCall {
-  ev: "cygnus:ping";
+  ev: "ping";
 }
 
 export interface RemoteRoleGenerationCall {
-  ev: "role:generate";
+  ev: "generateRole";
   initiator: {
     id: string;
   };
@@ -348,7 +393,38 @@ export interface RemoteRoleGenerationResponse {
   };
 }
 
-export type RemoteCall = RemoteTaskSeedCall | RemoteSynthesisCall | RemotePingCall | RemoteRoleGenerationCall;
+export interface RemoteFunctionCall {
+  ev: "functionCall";
+  initiator: {
+    id: string;
+  };
+  demonstration: {
+    id: string;
+    type: DemonstrationType;
+    taskId?: string;
+    content: DemonstrationContentV1;
+  };
+  func: string;
+  arguments: Array<CyFunctionCallArgumentV1>;
+}
+
+export interface RemoteFunctionCallResponse {
+  output: CyFunctionCallOutputV1;
+  persist?: boolean;
+}
+
+export type RemoteCall = RemoteTaskSeedCall | RemoteSynthesisCall | RemotePingCall | RemoteRoleGenerationCall | RemoteFunctionCall;
+
+export interface TaskOptions {
+  goal?: {
+    target: number;
+    deadline: number;
+    disableOnCompletion?: boolean;
+  };
+  manager?: {
+    balancingFactor?: number;
+  };
+}
 
 export type NextRole = string | ({
   group: string;
@@ -402,6 +478,39 @@ export interface Synthesizer {
   url: string;
 }
 
+export type FunctionParameter = {
+  name: string;
+  displayName: string;
+  required: boolean;
+  description?: string;
+} & ({
+  type: "string";
+  default?: string;
+  placeholder?: string;
+  minLength?: number;
+  maxLength?: number;
+} | {
+  type: "number";
+  default?: number;
+  min?: number;
+  max?: number;
+  integer?: boolean;
+} | {
+  type: "role";
+  groups?: Array<string>;
+});
+
+export interface FunctionConfig {
+  name: string;
+  endpoint: string;
+  icon?: {
+    type: "SVG";
+    path: string;
+  };
+  description?: string;
+  parameters: Array<FunctionParameter>;
+}
+
 export interface TaskConfigV1 {
   version: 1;
   roles?: {
@@ -413,6 +522,7 @@ export interface TaskConfigV1 {
     url?: string;
   };
   synthesizers?: Record<string, Synthesizer>;
+  functions?: Record<string, FunctionConfig>;
 }
 
 export type TaskConfig = TaskConfigV1;

@@ -9,7 +9,7 @@ export type RoleGenerationResponse = cy.RemoteRoleGenerationResponse;
 export default abstract class AbstractRoleGenerationCallHandler implements Route {
 	public abstract generate(req: RoleGenerationRequest): Promise<RoleGenerationResponse>;
 
-	public readonly event = 'role:generate';
+	public readonly event = 'generateRole';
 
 	public async [RESPOND_SYMBOL](req: cy.RemoteRoleGenerationCall): Promise<Response> {
 		// deno-lint-ignore no-explicit-any
