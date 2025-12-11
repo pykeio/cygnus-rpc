@@ -32,10 +32,10 @@ export class SimpleFunctionCall extends AbstractFunctionCallHandler {
 	public override async generate(req: FunctionCallRequest): Promise<FunctionCallResponse> {
 		try {
 			const res = await this.handler(req);
-			if (!('success' in res)) {
+			if (!('output' in res)) {
 				return {
 					output: {
-						...(res as FunctionCallSuccessResponse),
+						...res,
 						success: true
 					// deno-lint-ignore no-explicit-any
 					} as any,
