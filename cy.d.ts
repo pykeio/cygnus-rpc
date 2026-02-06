@@ -151,10 +151,24 @@ export interface CyMessageSynthesisDescriptionV1 {
   };
 }
 
+export interface RichContent {
+  type?: string;
+  attrs?: Record<string, any> | undefined;
+  content?: Array<RichContent>;
+  marks?: Array<{
+    type: string;
+    attrs?: Record<string, any>;
+    [key: string]: any;
+  }>;
+  text?: string;
+  [key: string]: any;
+}
+
 export interface CyMessageItemV1 extends ItemBaseV1 {
   type: "cy:message";
   role: RoleKey;
-  content: object;
+  content: string | RichContent;
+  contentType?: "rich" | "markdown";
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
 
@@ -216,7 +230,7 @@ export interface DemonstrationContentV1 {
   version: 1;
   items?: Array<ItemV1>;
   customRoles?: Record<string, Array<DemonstrationCustomRoleV1>>;
-  initialTaskConfig?: Pick<TaskConfigV1, "roles" | "editorFeatures">;
+  initialTaskConfig?: Pick<TaskConfigV1, "roles" | "editorFeatures" | "editorType">;
 }
 
 export type DemonstrationContent = DemonstrationContentV1;
@@ -517,6 +531,7 @@ export interface TaskConfigV1 {
     individual?: Record<string, IndividualRole>;
     groups?: Record<string, RoleGroup>;
   };
+  editorType?: "rich" | "markdown";
   editorFeatures?: EditorFeatures;
   seed?: {
     url?: string;

@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 
-import { MarkedOptions, Token, TokenizerExtension, Tokens, getDefaults, lexer } from 'npm:marked@^16.4.1';
+import { MarkedOptions, Token, TokenizerExtension, Tokens, getDefaults, lexer, type MarkedToken } from 'npm:marked@^17.0.1';
 
 type PmMark = {
 	type: string;
@@ -69,10 +69,11 @@ export class PmRenderer {
 	*parse(tokens: string | Token[]): Generator<PmNode> {
 		if (typeof tokens === 'string') {
 			tokens = lexer(tokens, this.options);
+			console.log(JSON.stringify(tokens));
 		}
 
 		for (let i = 0; i < tokens.length; i++) {
-			const token = tokens[i];
+			const token = tokens[i] as MarkedToken;
 			if (this.renderers.has(token.type)) {
 				yield *this.renderers.get(token.type)!(token);
 				continue;
@@ -97,12 +98,96 @@ export class PmRenderer {
 				case 'del':
 					yield *this._emitWithMarks(token, [ { type: 'strikethrough' } ]);
 					break;
-				case 'paragraph':
-					yield { type: 'paragraph', content: [ ...this.parse(token.tokens!) ] };
+				case 'paragraph': {
+					const tokens = token.tokens;
+					if (tokens.length === 1 && tokens[0].type === 'image') {
+						yield *this.parse(tokens);
+					} else {
+						const content = [ ...this.parse(tokens) ];
+						if (
+							content.length === 1 &&
+							content[0].type === 'text' &&
+							(content[0].text === '&nbsp;' || content[0].text === '\xA0')
+						) {
+							yield { type: 'paragraph', content: [] }
+						} else {
+							yield { type: 'paragraph', content };
+						}
+					}
 					break;
+				}
 				case 'space': {
 					continue;
 				}
+				case 'list': {
+					const content = [ ...this.parse(token.items) ];
+					if (token.ordered) {
+						yield { type: 'orderedList', content };
+					} else {
+						yield { type: 'bulletList', content };
+					}
+					break;
+				}
+				case 'list_item': {
+					let content: PmNode[] = [];
+					if (token.tokens?.length) {
+						if (token.tokens.some(t => t.type === 'paragraph')) {
+							content = [ ...this.parse(token.tokens) ];
+						} else {
+							const firstToken = token.tokens[0];
+							if (firstToken && firstToken.type === 'text' && firstToken.tokens && firstToken.tokens.length > 0) {
+								const inlineContent = [ ...this.parse(firstToken.tokens) ];
+								content = [
+									{
+										type: 'paragraph',
+										content: inlineContent
+									}
+								];
+
+								if (token.tokens.length > 1) {
+									const remainingTokens = token.tokens.slice(1);
+									content.push(...this.parse(remainingTokens));
+								}
+							} else {
+								content = [ ...this.parse(token.tokens) ];
+							}
+						}
+					}
+
+					if (content.length === 0) {
+						content = [ { type: 'paragraph', content: [] } ];
+					}
+
+					yield { type: 'listItem', content };
+					break;
+				}
+				case 'escape': // Used in LaTeX, best to emit as-is
+				case 'html': // Not bothering
+					yield { type: 'text', text: token.raw };
+					break;
+				case 'hr':
+					yield { type: 'horizontalRule' };
+					break;
+				case 'link':
+					yield *this._emitWithMarks(token, [
+						{ type: 'link', attrs: { href: token.href, title: token.title || null } }
+					]);
+					break;
+				case 'codespan':
+					yield *this._emitWithMarks(token, [ { type: 'code' } ]);
+					break;
+				case 'code':
+					yield {
+						type: 'codeBlock',
+						attrs: token.lang ? { language: token.lang } : undefined,
+						content: [ { type: 'text', text: token.text } ]
+					};
+					break;
+				case 'br':
+					yield { type: 'hardBreak' };
+					break;
+				default:
+					throw new TypeError(`Unhandled ${token.type}`);
 			}
 		}
 	}
