@@ -69,7 +69,6 @@ export class PmRenderer {
 	*parse(tokens: string | Token[]): Generator<PmNode> {
 		if (typeof tokens === 'string') {
 			tokens = lexer(tokens, this.options);
-			console.log(JSON.stringify(tokens));
 		}
 
 		for (let i = 0; i < tokens.length; i++) {
