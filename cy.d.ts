@@ -141,7 +141,6 @@ export interface DemonstrationCustomRoleV1 {
 
 export interface CyMessageSynthesisDescriptionV1 {
   synthesizer: string;
-  editedByUser?: boolean;
   modelVersion?: string;
   generatedAt?: string;
   generationId?: string;
@@ -169,12 +168,13 @@ export interface CyMessageItemV1 extends ItemBaseV1 {
   role: RoleKey;
   content: string | RichContent;
   contentType?: "rich" | "markdown";
+  edited?: boolean;
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
 
 export interface CyMessageCandidatesItemV1 extends ItemBaseV1 {
   type: "cy:message-candidates";
-  candidates: Array<Pick<CyMessageItemV1, "role" | "content">>;
+  candidates: Array<Pick<CyMessageItemV1, "role" | "content" | "contentType" | "edited">>;
   selected: number;
   synthesis?: CyMessageSynthesisDescriptionV1;
 }
@@ -231,6 +231,7 @@ export interface DemonstrationContentV1 {
   items?: Array<ItemV1>;
   customRoles?: Record<string, Array<DemonstrationCustomRoleV1>>;
   initialTaskConfig?: Pick<TaskConfigV1, "roles" | "editorFeatures" | "editorType">;
+  seedMeta?: any;
 }
 
 export type DemonstrationContent = DemonstrationContentV1;
@@ -359,6 +360,7 @@ export interface RemoteSynthesisCall {
   synthesizer: string;
   creativity?: number;
   role?: RoleKey;
+  replaces?: ItemV1;
 }
 
 export type RemoteSynthesisEvent = {
@@ -427,7 +429,23 @@ export interface RemoteFunctionCallResponse {
   persist?: boolean;
 }
 
-export type RemoteCall = RemoteTaskSeedCall | RemoteSynthesisCall | RemotePingCall | RemoteRoleGenerationCall | RemoteFunctionCall;
+export interface RemoteSynthesisPreferenceCall {
+  ev: "synthesisPreference";
+  initiator: {
+    id: string;
+  };
+  demonstration: {
+    id: string;
+    type: DemonstrationType;
+    taskId?: string;
+    content: DemonstrationContentV1;
+  };
+  itemId: string;
+  feedback: 1 | 0 | -1;
+  candidate?: number;
+}
+
+export type RemoteCall = RemoteTaskSeedCall | RemoteSynthesisCall | RemotePingCall | RemoteRoleGenerationCall | RemoteFunctionCall | RemoteSynthesisPreferenceCall;
 
 export interface TaskOptions {
   goal?: {
@@ -537,6 +555,9 @@ export interface TaskConfigV1 {
     url?: string;
   };
   synthesizers?: Record<string, Synthesizer>;
+  synthesisFeedback?: {
+    url?: string;
+  };
   functions?: Record<string, FunctionConfig>;
 }
 
