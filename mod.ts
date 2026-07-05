@@ -4,7 +4,8 @@ import { assert } from 'jsr:@std/assert@1.0.15';
 import { concat as concatBytes } from 'jsr:@std/bytes@1.0.6';
 import { decode } from 'jsr:@std/msgpack@1.0.3';
 
-import type * as cy from './cy.d.ts';
+import type * as cy from 'https://cygnus.pyke.io/cy.d.ts';
+
 import { RESPOND_SYMBOL, type Route } from './_internal.ts';
 import { getLogger, type Logger } from './logging.ts';
 
@@ -135,7 +136,7 @@ export default class CygnusWorker {
 					}
 					return new Response(null, { status: 401 });
 				}
-				
+
 				let body: cy.RemoteCall;
 				try {
 					body = this.parseBody(bytes);
@@ -159,7 +160,7 @@ export default class CygnusWorker {
 		);
 	}
 
-	private getRoute(pathname: string): Route | undefined {	
+	private getRoute(pathname: string): Route | undefined {
 		let route = this.#routes.get(pathname);
 		if (!route && pathname.endsWith('/')) {
 			route = this.#routes.get(pathname.slice(0, -1));
@@ -190,7 +191,7 @@ export default class CygnusWorker {
 		return res;
 	}
 
-	public async test(pathname: string) {		
+	public async test(pathname: string) {
 		const route = this.getRoute(pathname);
 		if (!route) {
 			throw new Error(`Unknown route '${pathname}'`);
